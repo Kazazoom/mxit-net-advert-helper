@@ -20,3 +20,16 @@ log4net
       <add key="OpenX_AddUnitID_320" value= "XXXXXX"/> 
       <add key="isShowShinkaBannerAd" value= "1"/>
       <add key="bannerAdTimeout" value= "2500"/>
+	  
+5) Add the following statement to your Controller class
+
+            else if (messageReceived.Body.StartsWith(".clickad"))
+            {
+                AdvertModule.AdvertHelper.Instance.handleUserClickedOnAdLink(messageReceived,userInfo);
+
+                IsSendMessage = false;
+            }
+			
+6) Call this public function on the library for where you want to add the Ad banner:
+
+AdvertModule.AdvertHelper.Instance.appendShinkaBannerAd(ref messageToSend, userInfo);
