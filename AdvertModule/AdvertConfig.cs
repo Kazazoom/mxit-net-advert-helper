@@ -32,13 +32,15 @@ namespace AdvertModule
         internal static Color lightColor_forBlackBG { get; set; }
         internal static Color lightColor_forWhiteBG { get; set; }
         internal static String OpenX_URL;
-        internal static String OpenX_AddUnitID_120;
-        internal static String OpenX_AddUnitID_240;
-        internal static String OpenX_AddUnitID_320;
+        internal static String OpenX_AdUnitID_120;
+        internal static String OpenX_AdUnitID_180;
+        internal static String OpenX_AdUnitID_240;
+        internal static String OpenX_AdUnitID_320;
         internal static bool isShowShinkaBannerAd { get; set; }
         internal static int bannerAdTimeout { get; set; }
         internal static String mobiAppSaveActionURL;
         internal static String mobiAppServiceName;
+        internal static String appID;
 
         #endregion Public Properties
 
@@ -75,7 +77,7 @@ namespace AdvertModule
             }
             else
             {
-                lightColor_forWhiteBG = Color.White;
+                lightColor_forWhiteBG = Color.Black;
                 Console.WriteLine("WARNING: Defaulting font colour for white background to black. Please add 'lightColor_forWhiteBG' to your app.config file.");
             }
 
@@ -90,37 +92,57 @@ namespace AdvertModule
                 Console.WriteLine("WARNING: Defaulting Shinka URL to http://ox-d.shinka.sh/ma/1.0/arx?auid= Please add 'OpenX_URL' to your app.config file.");
             }
 
-            temp = ConfigurationManager.AppSettings["OpenX_AddUnitID_120"];
+            temp = ConfigurationManager.AppSettings["OpenX_AdUnitID_120"];
             if (!string.IsNullOrEmpty(temp))
             {
-                OpenX_AddUnitID_120 = temp;
+                OpenX_AdUnitID_120 = temp;
             }
             else
             {
-                OpenX_AddUnitID_120 = "";
-                Console.WriteLine("ERROR: Please add a value for 'OpenX_AddUnitID_120' to your app.config file.");
+                OpenX_AdUnitID_120 = "";
+                Console.WriteLine("ERROR: Please add a value for 'OpenX_AdUnitID_120' to your app.config file.");
             }
 
-            temp = ConfigurationManager.AppSettings["OpenX_AddUnitID_240"];
+            temp = ConfigurationManager.AppSettings["OpenX_AdUnitID_240"];
             if (!string.IsNullOrEmpty(temp))
             {
-                OpenX_AddUnitID_240 = temp;
+                OpenX_AdUnitID_240 = temp;
             }
             else 
             {
-                OpenX_AddUnitID_240 = "";
-                Console.WriteLine("ERROR: Please add a value for 'OpenX_AddUnitID_240' to your app.config file.");
+                OpenX_AdUnitID_240 = "";
+                Console.WriteLine("ERROR: Please add a value for 'OpenX_AdUnitID_240' to your app.config file.");
             }
 
-            temp = ConfigurationManager.AppSettings["OpenX_AddUnitID_320"];
+            temp = ConfigurationManager.AppSettings["OpenX_AdUnitID_180"];
             if (!string.IsNullOrEmpty(temp))
             {
-                OpenX_AddUnitID_320 = temp;
+                OpenX_AdUnitID_180 = temp;
             }
             else
             {
-                OpenX_AddUnitID_320 = "";
-                Console.WriteLine("ERROR: Please add a value for 'OpenX_AddUnitID_320' to your app.config file.");
+                //if no value is found for 180, default to the 240 value if available
+                if (OpenX_AdUnitID_240.Length > 0)
+                {
+                    OpenX_AdUnitID_180 = OpenX_AdUnitID_240;
+                    Console.WriteLine("WARNING: Please add a value for 'OpenX_AdUnitID_180' to your app.config file.");
+                }
+                else
+                {
+                    OpenX_AdUnitID_180 = "";
+                    Console.WriteLine("ERROR: Defaulting to OpenX_AdUnitID_240 value, please add a value for 'OpenX_AdUnitID_180' to your app.config file.");
+                }
+            }
+
+            temp = ConfigurationManager.AppSettings["OpenX_AdUnitID_320"];
+            if (!string.IsNullOrEmpty(temp))
+            {
+                OpenX_AdUnitID_320 = temp;
+            }
+            else
+            {
+                OpenX_AdUnitID_320 = "";
+                Console.WriteLine("ERROR: Please add a value for 'OpenX_AdUnitID_320' to your app.config file.");
             }
 
             temp = ConfigurationManager.AppSettings["isShowShinkaBannerAd"];
@@ -166,6 +188,17 @@ namespace AdvertModule
             {
                 mobiAppServiceName = "playinc";
                 Console.WriteLine("WARNING: Defaulting mobiAppActionURL to 'playinc'. Please add a value for 'mobiAppServiceName' to your app.config file.");
+            }
+
+            temp = ConfigurationManager.AppSettings["appID"];
+            if (!string.IsNullOrEmpty(temp))
+            {
+                appID = temp;
+            }
+            else
+            {
+                appID = "";
+                Console.WriteLine("ERROR: No value given for appID, needed to identify your app to the Ad Server. Please add this value to your app.config file.");
             }
 
         }
