@@ -45,29 +45,33 @@ namespace AdvertModule
             }
         }
 
-        private bool getBannerAdd(String MxitUserID, MXit.User.GenderType userGenderType, int displayWidth, int displayHeight, int userAge, out BannerAd adDetail)
+        private bool getBannerAd(String MxitUserID, MXit.User.GenderType userGenderType, int displayWidth, int displayHeight, int userAge, out BannerAd adDetail)
         {
             bool success = false;
 
             adDetail = new BannerAd();
 
             //Post back to openx
-            String openXAddUnitToUse = AdvertConfig.OpenX_AddUnitID_120;
+            String openXAdUnitToUse = AdvertConfig.OpenX_AdUnitID_120;
 
-            if (displayWidth >= 320)
+            if (displayWidth >= 300)
             {
-                openXAddUnitToUse = AdvertConfig.OpenX_AddUnitID_320;
+                openXAdUnitToUse = AdvertConfig.OpenX_AdUnitID_320;
             }
             else if (displayWidth >= 240)
             {
-                openXAddUnitToUse = AdvertConfig.OpenX_AddUnitID_240;
+                openXAdUnitToUse = AdvertConfig.OpenX_AdUnitID_240;
+            }
+            else if (displayWidth >= 180)
+            {
+                openXAdUnitToUse = AdvertConfig.OpenX_AdUnitID_180;
             }
             else
             {
-                openXAddUnitToUse = AdvertConfig.OpenX_AddUnitID_120;
+                openXAdUnitToUse = AdvertConfig.OpenX_AdUnitID_120;
             }
 
-            string strOpenxUrl = AdvertConfig.OpenX_URL + openXAddUnitToUse;
+            string strOpenxUrl = AdvertConfig.OpenX_URL + openXAdUnitToUse;
             string strUserDetails = "&" + "c.device=unknown" + "&" + "c.age=" + userAge + "&" + "c.gender=" + userGenderType + "&" + "xid=" + MxitUserID + "&" + "c.screensize=" + displayWidth + "x" + displayHeight;
             string strCompleteUrl = strOpenxUrl + strUserDetails;
             //use the complete url on a mobile
@@ -76,7 +80,7 @@ namespace AdvertModule
             req.UserAgent = "Mozilla Compatible mxit_client";
             req.Headers.Add("HTTP_X_DEVICE_USER_AGENT", "Mozilla Compatible mxit_client");
             req.Headers.Add("HTTP_X_FORWARDED_FOR", MxitUserID);
-            req.Headers.Add("HTTP_REFERER", "ask.kim");
+            req.Headers.Add("HTTP_REFERER", AdvertConfig.appID);
             //req.Headers.Add("HTTP_X_MXIT_USER_INPUT", ".header");
 
             req.Timeout = AdvertConfig.bannerAdTimeout;
@@ -331,8 +335,10 @@ namespace AdvertModule
             return new string(array, 0, arrayIndex);
         }
 
-        public void appendShinkaBannerAd(ref MessageToSend messageToSend, MXit.User.UserInfo userInfo)
-        {
+        public bool appendShinkaBannerAd(ref MessageToSend messageToSend, MXit.User.UserInfo userInfo)
+        {   
+            bool gotShinkaAd = false;
+
             try
             {
                 if (AdvertConfig.isShowShinkaBannerAd)
@@ -341,10 +347,10 @@ namespace AdvertModule
                     MXit.User.GenderType userGenderType = userInfo.Gender;
                     int displayWidth = userInfo.DeviceInfo.DisplayWidth;
                     int displayHeight = userInfo.DeviceInfo.DisplayHeight;
-                    int userAge = AgeInYears(userInfo.DateOfBirth.Year);
+                    int userAge = AgeInYears(userInfo.DateOfBirth);
 
                     BannerAd adTodisplay;
-                    bool gotShinkaAd = AdvertHelper.Instance.getBannerAdd(MxitUserID, userGenderType, displayWidth, displayHeight, userAge, out adTodisplay);
+                    gotShinkaAd = AdvertHelper.Instance.getBannerAd(MxitUserID, userGenderType, displayWidth, displayHeight, userAge, out adTodisplay);
 
                     if (gotShinkaAd)
                     {
@@ -355,8 +361,7 @@ namespace AdvertModule
                         }
 
                         messageToSend.Append("Go to ", CSS.Ins.clr["light"], CSS.Ins.mrk["d"]);
-                        messageToSend.AppendLine(MessageBuilder.Elements.CreateLink(adTodisplay.altText, ".clickad~" + adTodisplay.clickURL));
-                        //messageToSend.AppendLine(MessageBuilder.Elements.CreateLink(adTodisplay.altText, ".goto-playinc"));
+                        messageToSend.AppendLine(MessageBuilder.Elements.CreateLink(adTodisplay.altText, ".clickad~" + adTodisplay.clickURL));                        
                         messageToSend.AppendLine();
 
                         //register impression for the bannerad display
@@ -365,7 +370,7 @@ namespace AdvertModule
                         req.UserAgent = "Mozilla Compatible mxit_client";
                         req.Headers.Add("HTTP_X_DEVICE_USER_AGENT", "Mozilla Compatible mxit_client");
                         req.Headers.Add("HTTP_X_FORWARDED_FOR", MxitUserID);
-                        req.Headers.Add("HTTP_REFERER", "ask.kim");
+                        req.Headers.Add("HTTP_REFERER", AdvertConfig.appID);
 
                         req.Timeout = AdvertConfig.bannerAdTimeout;
                         req.Proxy = null;
@@ -382,18 +387,24 @@ namespace AdvertModule
             {
                 logger.Error("[" + MethodBase.GetCurrentMethod().Name + " - Error getting or showing Shinka ad: " + ex.ToString());
             }
+
+            return gotShinkaAd; //so that the calling function knows if an ad was displayed
         }
 
-        public int AgeInYears(int year)
-        {
-            //Need to improve this to include the day of year in calculation:
-            int intage = Convert.ToInt32(DateTime.Now.Year - year);
-            return intage;
+        public int AgeInYears(DateTime birthDate)
+        {            
+            DateTime now = DateTime.Today;
+            int age = now.Year - birthDate.Year;
+            if (birthDate.DayOfYear > now.DayOfYear) //if the user hasn't had their birthday yet, reduce by 1
+            { 
+                age--;
+            }
+            return age;
         }
         
         //Need this so that we can show an intermediate page on a Mobi app until C# apps are allowed to show HTTP links
         //This will send a request to a HTTP service to save the URL that the user should go to, when he is redirected to the destination Mobi App. 
-        //This will only work if you have redirect persmission from your C# App to the required Mobi App. Request this redirect permission from Mxit (Robert)
+        //This will only work if you have redirect permission from your C# App to the required Mobi App. Request this redirect permission from Mxit (Robert)
         public void createAndQueueRequestToMobiApp(MXit.User.UserInfo userInfo, String adClickURL)
         {
             String saveActionAPI_URL = AdvertConfig.mobiAppSaveActionURL;
