@@ -15,7 +15,7 @@ using System.Configuration;
 
 namespace AdvertModule
 {
-    class QueueHelper_HTTP
+    public class QueueHelper_HTTP
     {
         private static volatile QueueHelper_HTTP instance;
         private static readonly ILog logger = LogManager.GetLogger(typeof(QueueHelper_HTTP));
@@ -102,7 +102,7 @@ namespace AdvertModule
         }
 
 
-        private void StartQueueHandlers()
+        public void StartQueueHandlers()
         {
             ThreadStart job = new ThreadStart(QueueHandler);
             Thread thread = new Thread(job);
