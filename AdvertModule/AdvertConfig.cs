@@ -10,7 +10,7 @@ namespace AdvertModule
 {
     using System.Configuration;
 
-    internal static class AdvertConfig
+    public static class AdvertConfig
     {
         private static readonly ILog logger = LogManager.GetLogger(typeof(AdvertConfig));
 
@@ -175,8 +175,8 @@ namespace AdvertModule
             }
             else
             {
-                mobiAppSaveActionURL = "http://unxprdw1.kazazoom.com/mobi_portals/playinc/saveaction.php";
-                Console.WriteLine("WARNING: Defaulting mobiAppActionURL to 'http://unxprdw1.kazazoom.com/mobi_portals/playinc/saveaction.php'. Please add a value for 'mobiAppSaveActionURL' to your app.config file.");
+                mobiAppSaveActionURL = "http://unxprdw1.kazazoom.com/mobi_portals/mxpass/saveaction.php";
+                Console.WriteLine("WARNING: Defaulting mobiAppActionURL to 'http://unxprdw1.kazazoom.com/mobi_portals/mxpass/saveaction.php'. Please add a value for 'mobiAppSaveActionURL' to your app.config file.");
             }
 
             temp = ConfigurationManager.AppSettings["mobiAppServiceName"];
@@ -186,19 +186,27 @@ namespace AdvertModule
             }
             else
             {
-                mobiAppServiceName = "playinc";
-                Console.WriteLine("WARNING: Defaulting mobiAppActionURL to 'playinc'. Please add a value for 'mobiAppServiceName' to your app.config file.");
+                mobiAppServiceName = "mxpass";
+                Console.WriteLine("WARNING: Defaulting mobiAppServiceName to 'mxpass'. Please add a value for 'mobiAppServiceName' to your app.config file.");
             }
 
-            temp = ConfigurationManager.AppSettings["appID"];
+            temp = ConfigurationManager.AppSettings["ExternalAppName"];
             if (!string.IsNullOrEmpty(temp))
             {
                 appID = temp;
             }
             else
             {
-                appID = "";
-                Console.WriteLine("ERROR: No value given for appID, needed to identify your app to the Ad Server. Please add this value to your app.config file.");
+                temp = ConfigurationManager.AppSettings["appID"];
+                if (!string.IsNullOrEmpty(temp))
+                {
+                    appID = temp;
+                }
+                else
+                {
+                    appID = "";
+                    Console.WriteLine("ERROR: No value given for 'ExternalAppName', needed to identify your app to the Ad Server. Please add this value to your app.config file.");
+                }
             }
 
         }
