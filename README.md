@@ -1,4 +1,4 @@
-### Welcome to the *AdvertHelper 1.2.1* Release!
+### Welcome to the *AdvertHelper 1.2.2* Release!
 
 [AdvertHelper](https://github.com/Kazazoom/mxit-net-advert-helper/) is a C#
 helper for Mxit that takes care of Shinka Ad requests and display for C# based
@@ -6,9 +6,9 @@ Mxit Applications.
 
 ## RELEASE INFORMATION
 
-*AdvertHelper 1.2.1*
+*AdvertHelper 1.2.2*
 
-22 August 2012
+30 August 2012
 
 This is the first stable release of this helper.
 
@@ -53,10 +53,12 @@ For more information on SemVer, please see the included semver.md document.
  4. You will need to add the following values to your app.config file
 
     ```xml
+	<add key="ExternalAppName" value="yourserviceidfromthemxitdashboard"/>
     <add key="OpenX_URL" value="http://ox-d.shinka.sh/ma/1.0/arx?auid="/>
-    <add key="OpenX_AddUnitID_120" value= "XXXXXX"/>
-    <add key="OpenX_AddUnitID_240" value= "XXXXXX"/>
-    <add key="OpenX_AddUnitID_320" value= "XXXXXX"/>
+    <add key="OpenX_AdUnitID_120" value= "XXXXXX"/>
+	<add key="OpenX_AdUnitID_180" value= "XXXXXX"/>
+    <add key="OpenX_AdUnitID_240" value= "XXXXXX"/>
+    <add key="OpenX_AdUnitID_320" value= "XXXXXX"/>
     <add key="isShowShinkaBannerAd" value= "1"/>
     <add key="bannerAdTimeout" value= "2500"/>
     ```
@@ -72,13 +74,21 @@ For more information on SemVer, please see the included semver.md document.
         IsSendMessage = false;
     }
     ```
-
- 2. Call this public function on the library for where you want to add the Ad
+	
+ 2. Add this call to your Controller.Start (or similar) method 
+ 
+    ```c#
+    AdvertModule.QueueHelper_HTTP.Instance.StartQueueHandlers();
+    ```
+	
+ 3. Call this public function on the library for where you want to add the Ad 
     banner:
 
     ```c#
     AdvertModule.AdvertHelper.Instance.appendShinkaBannerAd(ref messageToSend, userInfo);
     ```
+	
+	You can retrieve the userInfo object via the Mxit getUser call upon the users first access of your app, and should be caching it in your database, and loading it into the user's session upon user's logon to your app.
 
 ### CONTRIBUTING
 
