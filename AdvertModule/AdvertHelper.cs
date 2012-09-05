@@ -81,13 +81,10 @@ namespace AdvertModule
                 deviceName = "samsung/sgh";
             }
 
-            deviceName = "nokia/c3";
-
             string strOpenxUrl = AdvertConfig.OpenX_URL + openXAdUnitToUse;
             string strUserDetails = "&" + "c.device=" + deviceName + "&" + "c.age=" + userAge + "&" + "c.gender=" + userGenderType + "&" + "xid=" + MxitUserID + "&" + "c.screensize=" + displayWidth + "x" + displayHeight;
-            //string strCompleteUrl = strOpenxUrl + strUserDetails;
             string strCompleteUrl = strOpenxUrl + strUserDetails;
-            //string strCompleteUrl = strOpenxUrl + Uri.EscapeDataString(strUserDetails);
+
             //use the complete url on a mobile
             HttpWebRequest req = (HttpWebRequest)WebRequest.Create(strCompleteUrl);
 
