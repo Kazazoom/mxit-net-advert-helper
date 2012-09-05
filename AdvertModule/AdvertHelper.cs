@@ -53,27 +53,41 @@ namespace AdvertModule
 
             //Post back to openx
             String openXAdUnitToUse = AdvertConfig.OpenX_AdUnitID_120;
+            String deviceName = "samsung/sgh"; //default to most popular device
 
-            if (displayWidth >= 300)
+            if (displayWidth >= 480)
             {
                 openXAdUnitToUse = AdvertConfig.OpenX_AdUnitID_320;
+                deviceName = "android";
+            }
+            else if (displayWidth >= 300)
+            {
+                openXAdUnitToUse = AdvertConfig.OpenX_AdUnitID_320;
+                deviceName = "nokia/c3";
             }
             else if (displayWidth >= 240)
             {
                 openXAdUnitToUse = AdvertConfig.OpenX_AdUnitID_240;
+                deviceName = "nokia/5130%20xpressmusic";
             }
             else if (displayWidth >= 180)
             {
                 openXAdUnitToUse = AdvertConfig.OpenX_AdUnitID_180;
+                deviceName = "samsung/sgh";
             }
             else
             {
                 openXAdUnitToUse = AdvertConfig.OpenX_AdUnitID_120;
+                deviceName = "samsung/sgh";
             }
 
+            deviceName = "nokia/c3";
+
             string strOpenxUrl = AdvertConfig.OpenX_URL + openXAdUnitToUse;
-            string strUserDetails = "&" + "c.device=unknown" + "&" + "c.age=" + userAge + "&" + "c.gender=" + userGenderType + "&" + "xid=" + MxitUserID + "&" + "c.screensize=" + displayWidth + "x" + displayHeight;
+            string strUserDetails = "&" + "c.device=" + deviceName + "&" + "c.age=" + userAge + "&" + "c.gender=" + userGenderType + "&" + "xid=" + MxitUserID + "&" + "c.screensize=" + displayWidth + "x" + displayHeight;
+            //string strCompleteUrl = strOpenxUrl + strUserDetails;
             string strCompleteUrl = strOpenxUrl + strUserDetails;
+            //string strCompleteUrl = strOpenxUrl + Uri.EscapeDataString(strUserDetails);
             //use the complete url on a mobile
             HttpWebRequest req = (HttpWebRequest)WebRequest.Create(strCompleteUrl);
 
