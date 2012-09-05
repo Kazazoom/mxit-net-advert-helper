@@ -367,7 +367,18 @@ namespace AdvertModule
                     {
                         if (adTodisplay.creativeType == "image")
                         {
-                            IMessageElement inlineImage = MessageBuilder.Elements.CreateInlineImage(adTodisplay.adImage, ImageAlignment.Center, TextFlow.AloneOnLine, 100);
+                            int imageDisplayWidthPerc;
+
+                            if (displayWidth <= 128)
+                            {
+                                imageDisplayWidthPerc = 99;
+                            }
+                            else
+                            {
+                                imageDisplayWidthPerc = 100;
+                            }
+
+                            IMessageElement inlineImage = MessageBuilder.Elements.CreateInlineImage(adTodisplay.adImage, ImageAlignment.Center, TextFlow.AloneOnLine, imageDisplayWidthPerc);
                             messageToSend.Append(inlineImage);
                         }
 
