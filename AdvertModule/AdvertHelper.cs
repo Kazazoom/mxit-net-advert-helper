@@ -81,13 +81,10 @@ namespace AdvertModule
                 deviceName = "samsung/sgh";
             }
 
-            deviceName = "nokia/c3";
-
             string strOpenxUrl = AdvertConfig.OpenX_URL + openXAdUnitToUse;
             string strUserDetails = "&" + "c.device=" + deviceName + "&" + "c.age=" + userAge + "&" + "c.gender=" + userGenderType + "&" + "xid=" + MxitUserID + "&" + "c.screensize=" + displayWidth + "x" + displayHeight;
-            //string strCompleteUrl = strOpenxUrl + strUserDetails;
             string strCompleteUrl = strOpenxUrl + strUserDetails;
-            //string strCompleteUrl = strOpenxUrl + Uri.EscapeDataString(strUserDetails);
+
             //use the complete url on a mobile
             HttpWebRequest req = (HttpWebRequest)WebRequest.Create(strCompleteUrl);
 
@@ -370,7 +367,18 @@ namespace AdvertModule
                     {
                         if (adTodisplay.creativeType == "image")
                         {
-                            IMessageElement inlineImage = MessageBuilder.Elements.CreateInlineImage(adTodisplay.adImage, ImageAlignment.Center, TextFlow.AloneOnLine, 100);
+                            int imageDisplayWidthPerc;
+
+                            if (displayWidth <= 128)
+                            {
+                                imageDisplayWidthPerc = 99;
+                            }
+                            else
+                            {
+                                imageDisplayWidthPerc = 100;
+                            }
+
+                            IMessageElement inlineImage = MessageBuilder.Elements.CreateInlineImage(adTodisplay.adImage, ImageAlignment.Center, TextFlow.AloneOnLine, imageDisplayWidthPerc);
                             messageToSend.Append(inlineImage);
                         }
 
