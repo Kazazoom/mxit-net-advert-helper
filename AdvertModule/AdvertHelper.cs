@@ -15,6 +15,7 @@ using MXit.Messaging.MessageElements.Replies;
 using MXit.Common;
 using MXit.Messaging;
 using System.Threading;
+using MXitConnectionModule;
 
 
 namespace AdvertModule
@@ -448,7 +449,8 @@ namespace AdvertModule
             req.ServicePoint.ConnectionLeaseTimeout = 1000;
             req.ServicePoint.MaxIdleTime = 1000;
 
-            QueueHelper_HTTP.Instance.QueueItem(req);
+            //QueueHelper_HTTP.Instance.QueueItem(req);
+            QueueHelper_HTTP.Instance.processHTTPWebRequestImmediately(req);
         }
 
         public void handleUserClickedOnAdLink(MessageReceived messageReceived, MXit.User.UserInfo userInfo)
@@ -458,17 +460,24 @@ namespace AdvertModule
             createAndQueueRequestToMobiApp(userInfo, adClickURL);
 
             //We need to wait a short while before calling the redirect to make sure the Mobi App has saved the URL to redirect to:
-            Thread.Sleep(20);
+            //Thread.Sleep(20);
 
             MXit.Navigation.RedirectRequest redirectRequest;
             String messageForMobiApp = ".gotourl~" + adClickURL;
-            redirectRequest = messageReceived.CreateRedirectRequest(AdvertConfig.mobiAppServiceName, messageForMobiApp);
+            //redirectRequest = messageReceived.CreateRedirectRequest(AdvertConfig.mobiAppServiceName, messageForMobiApp);
+            redirectRequest = messageReceived.CreateRedirectRequest(AdvertConfig.mobiAppServiceName);
 
             //Redirect the users context
 
             //************* Replace with your own client.RedirectRequest based on where your client object resides: ***************
             MXitConnectionModule.ConnectionManager.Instance.RedirectRequest(redirectRequest);
             //****************************
+
+            /*
+            String mobiMessageBody = @"::op=cmd|type=platreq|selmsg=Click here to continue|dest=http%3a//www.google.com|id=12345: Back";
+            RESTMessageToSend rMessageToSend = new RESTMessageToSend(AdvertConfig.mobiAppServiceName, userInfo.UserId, mobiMessageBody);
+            RESTConnectionHelper.Instance.SendMessage(rMessageToSend);
+             */
         }
 
     }
