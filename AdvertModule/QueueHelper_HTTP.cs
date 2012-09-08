@@ -42,6 +42,24 @@ namespace AdvertModule
             }
         }
 
+        public void processHTTPWebRequestImmediately(HttpWebRequest req)
+        {
+            using (HttpWebResponse response = (HttpWebResponse)req.GetResponse())
+            {
+                using (Stream responseStream = response.GetResponseStream())
+                {
+                    using (StreamReader streamIn = new StreamReader(responseStream))
+                    {
+                        String strResponse = streamIn.ReadToEnd();
+                        streamIn.Close();
+                    }
+                    responseStream.Flush();
+                    responseStream.Close();
+                }
+                response.Close();
+            }
+        }
+
         private void QueueHandler()
         {
             //this will receive a notification when there is a new HttpRequest in the thread.
@@ -73,20 +91,7 @@ namespace AdvertModule
                             //Fetch item from front of queue and request a thread from thread pool to process it
                             HttpWebRequest req = itemList.Dequeue();
 
-                            using (HttpWebResponse response = (HttpWebResponse)req.GetResponse())
-                            {
-                                using (Stream responseStream = response.GetResponseStream())
-                                {
-                                    using (StreamReader streamIn = new StreamReader(responseStream))
-                                    {
-                                        String strResponse = streamIn.ReadToEnd();
-                                        streamIn.Close();
-                                    }
-                                    responseStream.Flush();
-                                    responseStream.Close();
-                                }
-                                response.Close();
-                            }
+                            processHTTPWebRequestImmediately(req);
 
                             processedQueueItemsCount++;
 
