@@ -66,7 +66,7 @@ namespace AdvertModule
             workerThreadPool = new CustomThreadPool();
 
             int minThreads = 1;
-            int maxThreads = 1;
+            int maxThreads = 20;
             int processedQueueItemsCount = 0;
 
             workerThreadPool.SetMinMaxThreads(minThreads, maxThreads);
@@ -130,7 +130,7 @@ namespace AdvertModule
             }
             catch (Exception e)
             {
-                logger.Info("[" + MethodBase.GetCurrentMethod().Name + "()] - ResourceLock exception (Out)", e);
+                logger.Error("[" + MethodBase.GetCurrentMethod().Name + "()] - ResourceLock exception (Out)", e);
             }
         }
 

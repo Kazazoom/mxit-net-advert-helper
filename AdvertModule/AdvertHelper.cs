@@ -39,7 +39,11 @@ namespace AdvertModule
                 if (instance == null)
                 {
                     if (instance == null)
+                    {
                         instance = new AdvertHelper();
+                        logger.Info("[" + MethodBase.GetCurrentMethod().Name + "()] - AdvertHelper VERSION 2.0.35");
+                        Console.WriteLine(DateTime.Now.ToString() + " AdvertHelper VERSION 2.0.35");
+                    }
                 }
 
                 return instance;
@@ -398,8 +402,8 @@ namespace AdvertModule
                         req.Timeout = AdvertConfig.bannerAdTimeout;
                         req.Proxy = null;
                         req.KeepAlive = false;
-                        req.ServicePoint.ConnectionLeaseTimeout = 1000;
-                        req.ServicePoint.MaxIdleTime = 1000;
+                        req.ServicePoint.ConnectionLeaseTimeout = 10000;
+                        req.ServicePoint.MaxIdleTime = 10000;
 
                         QueueHelper_HTTP.Instance.QueueItem(req);
                     }
