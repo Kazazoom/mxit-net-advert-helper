@@ -87,7 +87,7 @@ namespace AdvertModule
             }
 
             string strOpenxUrl = AdvertConfig.OpenX_URL + openXAdUnitToUse;
-            string strUserDetails = "&" + "c.device=" + deviceName + "&" + "c.age=" + userAge + "&" + "c.gender=" + userGenderType + "&" + "xid=" + MxitUserID + "&" + "c.screensize=" + displayWidth + "x" + displayHeight;
+            string strUserDetails = "&" + "c.device=" + deviceName + "&" + "c.age=" + userAge + "&" + "c.gender=" + userGenderType.ToString().ToLower() + "&" + "xid=" + MxitUserID + "&" + "c.country=za";
             string strCompleteUrl = strOpenxUrl + strUserDetails;
 
             //use the complete url on a mobile
@@ -95,7 +95,13 @@ namespace AdvertModule
 
             req.UserAgent = "Mozilla Compatible mxit_client";
             req.Headers.Add("HTTP_X_DEVICE_USER_AGENT", "Mozilla Compatible mxit_client");
-            req.Headers.Add("HTTP_X_FORWARDED_FOR", MxitUserID);
+
+            Random random = new Random(DateTime.Now.Second);
+            int randomUpTo254 = random.Next(1, 254);
+
+            String tempIP = "196.25.101." + randomUpTo254;
+
+            req.Headers.Add("HTTP_X_FORWARDED_FOR", tempIP);
             req.Headers.Add("HTTP_REFERER", AdvertConfig.appID);
             //req.Headers.Add("HTTP_X_MXIT_USER_INPUT", ".header");
 
@@ -388,7 +394,8 @@ namespace AdvertModule
                         }
 
                         messageToSend.Append("Go to ", CSS.Ins.clr["light"], CSS.Ins.mrk["d"]);
-                        messageToSend.AppendLine(MessageBuilder.Elements.CreateLink(adTodisplay.altText, ".clickad~" + adTodisplay.clickURL));                        
+                        String displayText = System.Net.WebUtility.HtmlDecode(adTodisplay.altText);
+                        messageToSend.AppendLine(MessageBuilder.Elements.CreateLink(displayText, ".clickad|" + adTodisplay.clickURL));                        
                         messageToSend.AppendLine();
 
                         //register impression for the bannerad display
@@ -396,7 +403,13 @@ namespace AdvertModule
 
                         req.UserAgent = "Mozilla Compatible mxit_client";
                         req.Headers.Add("HTTP_X_DEVICE_USER_AGENT", "Mozilla Compatible mxit_client");
-                        req.Headers.Add("HTTP_X_FORWARDED_FOR", MxitUserID);
+
+
+                        Random random = new Random(DateTime.Now.Second);
+                        int randomUpTo254 = random.Next(1, 254);
+                        String tempIP = "196.25.101." + randomUpTo254;
+                        req.Headers.Add("HTTP_X_FORWARDED_FOR", tempIP);
+
                         req.Headers.Add("HTTP_REFERER", AdvertConfig.appID);
 
                         req.Timeout = AdvertConfig.bannerAdTimeout;
@@ -453,21 +466,21 @@ namespace AdvertModule
             req.ServicePoint.ConnectionLeaseTimeout = 1000;
             req.ServicePoint.MaxIdleTime = 1000;
 
-            //QueueHelper_HTTP.Instance.QueueItem(req);
-            QueueHelper_HTTP.Instance.processHTTPWebRequestImmediately(req);
+            QueueHelper_HTTP.Instance.QueueItem(req);
+            //QueueHelper_HTTP.Instance.processHTTPWebRequestImmediately(req);
         }
 
         public void handleUserClickedOnAdLink(MessageReceived messageReceived, MXit.User.UserInfo userInfo)
         {
-            String adClickURL = messageReceived.Body.Split('~')[1];
+            String adClickURL = messageReceived.Body.Split('|')[1];
 
             createAndQueueRequestToMobiApp(userInfo, adClickURL);
 
             //We need to wait a short while before calling the redirect to make sure the Mobi App has saved the URL to redirect to:
-            //Thread.Sleep(20);
+            Thread.Sleep(20);
 
             MXit.Navigation.RedirectRequest redirectRequest;
-            String messageForMobiApp = ".gotourl~" + adClickURL;
+            String messageForMobiApp = ".gotourl|" + adClickURL;
             //redirectRequest = messageReceived.CreateRedirectRequest(AdvertConfig.mobiAppServiceName, messageForMobiApp);
             redirectRequest = messageReceived.CreateRedirectRequest(AdvertConfig.mobiAppServiceName);
 
