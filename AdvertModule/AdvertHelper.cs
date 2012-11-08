@@ -16,6 +16,8 @@ using MXit.Common;
 using MXit.Messaging;
 using System.Threading;
 using MXitConnectionModule;
+using System.Security.Cryptography;
+using MXit.User;
 
 
 namespace AdvertModule
@@ -23,6 +25,8 @@ namespace AdvertModule
     public class AdvertHelper
     {
         private static volatile AdvertHelper instance;
+        private static Dictionary<string, IImageStripReference> bannerStripCache = new Dictionary<string, IImageStripReference>();
+
         private static readonly ILog logger = LogManager.GetLogger(typeof(AdvertHelper));
 
         private AdvertHelper()
@@ -236,6 +240,42 @@ namespace AdvertModule
             return success;
         }
 
+
+        //Helper function for caching, creates hash from image
+        public string GetImageHash(Bitmap img) {
+            string hash;
+
+            byte[] byteArray = ImageToByte2(img);
+
+            MD5 md5 = System.Security.Cryptography.MD5.Create();
+            
+            byte[] hashBytes = md5.ComputeHash(byteArray);
+
+            // step 2, convert byte array to hex string
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < hashBytes.Length; i++)
+            {
+                sb.Append(hashBytes[i].ToString("X2"));
+            }
+            hash = sb.ToString();
+
+            return hash;
+        }
+
+        //Helper function for caching, converts Bitmap to Byte Array
+        public static byte[] ImageToByte2(Bitmap img)
+        {
+            byte[] byteArray = new byte[0];
+            using (MemoryStream stream = new MemoryStream())
+            {
+                img.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
+                stream.Close();
+
+                byteArray = stream.ToArray();
+            }
+            return byteArray;
+        }
+
         private string Between(string content, string start, string end, string search, int startposition, string searchEnd)
         {
             int tagstartIndex = content.IndexOf(start) + startposition;
@@ -378,6 +418,33 @@ namespace AdvertModule
                     {
                         if (adTodisplay.creativeType == "image")
                         {
+                            if ((AdvertConfig.bannerCacheSize > 0) && (messageToSend.ToDevice.HasFeature(DeviceFeatures.Gaming)))
+                            {
+                                //use ImageStrips to allow caching of images on users device
+                                string bannerHash = GetImageHash(adTodisplay.adImage);
+                                if (!bannerStripCache.ContainsKey(bannerHash))
+                                {
+                                    //reset the cache once the max cache size is reached (could consider more intelligent caching)
+                                    if (bannerStripCache.Count >= AdvertConfig.bannerCacheSize)
+                                    {
+                                        bannerStripCache.Clear();
+                                    }
+                                    
+                                    IImageStripReference bannerImageStrip = MXitConnectionModule.ConnectionManager.Instance.RegisterImageStrip(bannerHash, adTodisplay.adImage, adTodisplay.adImage.Width / 1, adTodisplay.adImage.Height, 0);
+                                    bannerStripCache[bannerHash] = bannerImageStrip;
+                                }
+
+                                //this doesn't allow client-side auto resizing of images, may want to consider server side resizing
+                                ITable boardAd = MessageBuilder.Elements.CreateTable(messageToSend, "ad_" + bannerHash, 1, 1);
+                                boardAd.SelectionMode = SelectionRectType.Outline;
+                                boardAd.Style.Align = (AlignmentType)((int)AlignmentType.VerticalCenter + (int)AlignmentType.HorizontalCenter);
+                                boardAd.Mode = TableSendModeType.Update;
+                                boardAd[0, 0].Frames.Set(bannerStripCache[bannerHash], 0);                                
+                                messageToSend.Append(boardAd);
+                            }
+                            else
+                            {
+
                             int imageDisplayWidthPerc;
 
                             if (displayWidth <= 128)
@@ -391,6 +458,7 @@ namespace AdvertModule
 
                             IMessageElement inlineImage = MessageBuilder.Elements.CreateInlineImage(adTodisplay.adImage, ImageAlignment.Center, TextFlow.AloneOnLine, imageDisplayWidthPerc);
                             messageToSend.Append(inlineImage);
+                        }
                         }
 
                         messageToSend.Append("Go to ", CSS.Ins.clr["light"], CSS.Ins.mrk["d"]);
