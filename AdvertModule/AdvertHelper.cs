@@ -395,7 +395,7 @@ namespace AdvertModule
 
                         messageToSend.Append("Go to ", CSS.Ins.clr["light"], CSS.Ins.mrk["d"]);
                         String displayText = System.Net.WebUtility.HtmlDecode(adTodisplay.altText);
-                        messageToSend.AppendLine(MessageBuilder.Elements.CreateLink(displayText, ".clickad|" + adTodisplay.clickURL));                        
+                        messageToSend.AppendLine(MessageBuilder.Elements.CreateBrowserLink(displayText, adTodisplay.clickURL));                        
                         messageToSend.AppendLine();
 
                         //register impression for the bannerad display
@@ -407,7 +407,7 @@ namespace AdvertModule
 
                         Random random = new Random(DateTime.Now.Second);
                         int randomUpTo254 = random.Next(1, 254);
-                        String tempIP = "196.25.101." + randomUpTo254;
+                        String tempIP = "196.11.239." + randomUpTo254;
                         req.Headers.Add("HTTP_X_FORWARDED_FOR", tempIP);
 
                         req.Headers.Add("HTTP_REFERER", AdvertConfig.appID);
@@ -442,6 +442,7 @@ namespace AdvertModule
             return age;
         }
         
+        /*
         //Need this so that we can show an intermediate page on a Mobi app until C# apps are allowed to show HTTP links
         //This will send a request to a HTTP service to save the URL that the user should go to, when he is redirected to the destination Mobi App. 
         //This will only work if you have redirect permission from your C# App to the required Mobi App. Request this redirect permission from Mxit (Robert)
@@ -469,12 +470,15 @@ namespace AdvertModule
             QueueHelper_HTTP.Instance.QueueItem(req);
             //QueueHelper_HTTP.Instance.processHTTPWebRequestImmediately(req);
         }
+        */
 
+        // No longer needed if we can display a HTTP link
+        /*
         public void handleUserClickedOnAdLink(MessageReceived messageReceived, MXit.User.UserInfo userInfo)
         {
             String adClickURL = messageReceived.Body.Split('|')[1];
 
-            createAndQueueRequestToMobiApp(userInfo, adClickURL);
+            createAndQueueRequestToMobiApp(userInfo, adClickURL); 
 
             //We need to wait a short while before calling the redirect to make sure the Mobi App has saved the URL to redirect to:
             Thread.Sleep(20);
@@ -490,12 +494,14 @@ namespace AdvertModule
             MXitConnectionModule.ConnectionManager.Instance.RedirectRequest(redirectRequest);
             //****************************
 
-            /*
-            String mobiMessageBody = @"::op=cmd|type=platreq|selmsg=Click here to continue|dest=http%3a//www.google.com|id=12345: Back";
-            RESTMessageToSend rMessageToSend = new RESTMessageToSend(AdvertConfig.mobiAppServiceName, userInfo.UserId, mobiMessageBody);
-            RESTConnectionHelper.Instance.SendMessage(rMessageToSend);
-             */
+            
+            //String mobiMessageBody = @"::op=cmd|type=platreq|selmsg=Click here to continue|dest=http%3a//www.google.com|id=12345: Back";
+            //RESTMessageToSend rMessageToSend = new RESTMessageToSend(AdvertConfig.mobiAppServiceName, userInfo.UserId, mobiMessageBody);
+            //RESTConnectionHelper.Instance.SendMessage(rMessageToSend);
+             
         }
+         */
+    
 
     }
 }
