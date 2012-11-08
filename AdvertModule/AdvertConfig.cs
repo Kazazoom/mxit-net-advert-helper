@@ -36,7 +36,7 @@ namespace AdvertModule
         internal static String OpenX_AdUnitID_180;
         internal static String OpenX_AdUnitID_240;
         internal static String OpenX_AdUnitID_320;
-        internal static bool isShowShinkaBannerAd { get; set; }
+        public static bool isShowShinkaBannerAd { get; set; }
         internal static int bannerAdTimeout { get; set; }
         internal static String mobiAppSaveActionURL;
         internal static String mobiAppServiceName;
