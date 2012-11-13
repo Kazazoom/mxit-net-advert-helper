@@ -16,6 +16,8 @@ using MXit.Common;
 using MXit.Messaging;
 using System.Threading;
 using MXitConnectionModule;
+using System.Security.Cryptography;
+using MXit.User;
 
 
 namespace AdvertModule
@@ -23,6 +25,10 @@ namespace AdvertModule
     public class AdvertHelper
     {
         private static volatile AdvertHelper instance;
+        private static IImageStripReference[] bannerStripCache = new IImageStripReference[AdvertConfig.bannerCacheSize];
+        private static Dictionary<string, int> bannerHashMap = new Dictionary<string, int>(); //tracks which banners are stored in which position in the cache array
+        private static int lastCachePosition = 0;
+
         private static readonly ILog logger = LogManager.GetLogger(typeof(AdvertHelper));
 
         private AdvertHelper()
@@ -225,15 +231,51 @@ namespace AdvertModule
             {
                 logger.Debug("[" + MethodBase.GetCurrentMethod().Name + "()] - Starting to read ad bitmap image...");
                 //convert the url into an image and load to the bitmap
-                adDetail.adImage = BitmapFromWeb(adDetail.adImageURL);
+                //success is dtermined by the loading of the image
+                adDetail.adImage = BitmapFromWeb(adDetail.adImageURL, out success); 
                 logger.Debug("[" + MethodBase.GetCurrentMethod().Name + "()] - Finished reading ad bitmap image...");
-                success = true;
             }
 
             //add banner to user session
             //userSession.CurrentBannerAd = adDetail;
 
             return success;
+        }
+
+
+        //Helper function for caching, creates hash from image
+        public string GetImageHash(Bitmap img) {
+            string hash;
+
+            byte[] byteArray = ImageToByte2(img);
+
+            MD5 md5 = System.Security.Cryptography.MD5.Create();
+            
+            byte[] hashBytes = md5.ComputeHash(byteArray);
+
+            // step 2, convert byte array to hex string
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < hashBytes.Length; i++)
+            {
+                sb.Append(hashBytes[i].ToString("X2"));
+            }
+            hash = sb.ToString();
+
+            return hash;
+        }
+
+        //Helper function for caching, converts Bitmap to Byte Array
+        public static byte[] ImageToByte2(Bitmap img)
+        {
+            byte[] byteArray = new byte[0];
+            using (MemoryStream stream = new MemoryStream())
+            {
+                img.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
+                stream.Close();
+
+                byteArray = stream.ToArray();
+            }
+            return byteArray;
         }
 
         private string Between(string content, string start, string end, string search, int startposition, string searchEnd)
@@ -278,8 +320,11 @@ namespace AdvertModule
             return finalString;
         }
 
-        private Bitmap BitmapFromWeb(string URL)
+        private Bitmap BitmapFromWeb(string URL, out bool success)
         {
+
+            //success if false by default, until download is successful 
+            success = false;
 
             // create a web request to the url of the image
             HttpWebRequest req = (HttpWebRequest)WebRequest.Create(URL);
@@ -314,6 +359,7 @@ namespace AdvertModule
                 }
 
                 // return the Bitmap of the image
+                success = true;
                 return bmp;
             }
             catch (Exception ex)
@@ -357,6 +403,67 @@ namespace AdvertModule
             return new string(array, 0, arrayIndex);
         }
 
+        private void appendBannerImage(ref MessageToSend messageToSend, MXit.User.UserInfo userInfo, BannerAd adTodisplay) {
+                            if ((AdvertConfig.bannerCacheSize > 0) && (messageToSend.ToDevice.HasFeature(DeviceFeatures.Gaming)))
+                            {
+                                //use ImageStrips to allow caching of images on users device
+                                string bannerHash = GetImageHash(adTodisplay.adImage);
+                                int cachePosition;
+                                if (!bannerHashMap.ContainsKey(bannerHash))
+                                {
+                                    cachePosition = lastCachePosition;
+                    IImageStripReference bannerImageStrip = MXitConnectionModule.ConnectionManager.Instance.RegisterImageStrip(bannerHash, adTodisplay.adImage, adTodisplay.adImage.Width, adTodisplay.adImage.Height, 0);
+                                    bannerStripCache[cachePosition] = bannerImageStrip;
+                    //remove any other hashes that are using this position
+                    foreach (string key in bannerHashMap.Keys)
+                    {
+                        if (bannerHashMap[key] == cachePosition)
+                            bannerHashMap.Remove(key);
+                        break;
+                    }
+                    //and assign this position to the hash
+                                    bannerHashMap[bannerHash] = cachePosition;
+
+                                    //advance the pointer of the last added imagestrip. 
+                                    lastCachePosition++;
+                                    if (lastCachePosition == AdvertConfig.bannerCacheSize)
+                                    {
+                                        lastCachePosition = 0;
+                                    }
+                                }
+                else
+                {
+                                    cachePosition = bannerHashMap[bannerHash];
+                                }
+
+                                //this doesn't allow client-side auto resizing of images, may want to consider server side resizing
+                                ITable boardAd = MessageBuilder.Elements.CreateTable(messageToSend, "ad-" + bannerHash, 1, 1);
+                                boardAd.SelectionMode = SelectionRectType.Outline;
+                                boardAd.Style.Align = (AlignmentType)((int)AlignmentType.VerticalCenter + (int)AlignmentType.HorizontalCenter);
+                                boardAd.Mode = TableSendModeType.Update;
+                                boardAd[0, 0].Frames.Set(bannerStripCache[cachePosition], 0);                                
+                                messageToSend.Append(boardAd);
+                            }
+                            else
+                            {
+                int displayWidth = userInfo.DeviceInfo.DisplayWidth;
+                            int imageDisplayWidthPerc;
+
+                            if (displayWidth <= 128)
+                            {
+                                imageDisplayWidthPerc = 99;
+                            }
+                            else
+                            {
+                                imageDisplayWidthPerc = 100;
+                            }
+
+                            IMessageElement inlineImage = MessageBuilder.Elements.CreateInlineImage(adTodisplay.adImage, ImageAlignment.Center, TextFlow.AloneOnLine, imageDisplayWidthPerc);
+                            messageToSend.Append(inlineImage);
+                        }
+                        }
+
+
         public bool appendShinkaBannerAd(ref MessageToSend messageToSend, MXit.User.UserInfo userInfo)
         {   
             bool gotShinkaAd = false;
@@ -378,19 +485,16 @@ namespace AdvertModule
                     {
                         if (adTodisplay.creativeType == "image")
                         {
-                            int imageDisplayWidthPerc;
-
-                            if (displayWidth <= 128)
+                            //an extra check to see that the image was retrieved
+                            if (adTodisplay.adImage == null)
                             {
-                                imageDisplayWidthPerc = 99;
+                                return false;
                             }
                             else
                             {
-                                imageDisplayWidthPerc = 100;
+                                appendBannerImage(ref messageToSend, userInfo, adTodisplay);
                             }
-
-                            IMessageElement inlineImage = MessageBuilder.Elements.CreateInlineImage(adTodisplay.adImage, ImageAlignment.Center, TextFlow.AloneOnLine, imageDisplayWidthPerc);
-                            messageToSend.Append(inlineImage);
+                            
                         }
 
                         messageToSend.Append("Go to ", CSS.Ins.clr["light"], CSS.Ins.mrk["d"]);
