@@ -214,6 +214,9 @@ namespace AdvertModule
             if (!string.IsNullOrEmpty(temp))
             {
                 bannerCacheSize = Int32.Parse(temp);
+                if (bannerCacheSize > 90) {
+                    Console.WriteLine("WARNING: Mxit has a limit of 100 image strips per apps (as per forum reference). Consider using a smaller cache size for banners.");
+                }
             }
             else
             {
