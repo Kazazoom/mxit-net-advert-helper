@@ -94,16 +94,13 @@ namespace AdvertModule
             HttpWebRequest req = (HttpWebRequest)WebRequest.Create(strCompleteUrl);
 
             req.UserAgent = "Mozilla Compatible mxit_client";
-            req.Headers.Add("HTTP_X_DEVICE_USER_AGENT", "Mozilla Compatible mxit_client");
 
             Random random = new Random(DateTime.Now.Second);
             int randomUpTo254 = random.Next(1, 254);
-
             String tempIP = "196.25.101." + randomUpTo254;
 
-            req.Headers.Add("HTTP_X_FORWARDED_FOR", tempIP);
-            req.Headers.Add("HTTP_REFERER", AdvertConfig.appID);
-            //req.Headers.Add("HTTP_X_MXIT_USER_INPUT", ".header");
+            req.Headers.Add("X-Forwarded-For", tempIP);
+            req.Referer = AdvertConfig.appID;            
 
             req.Timeout = AdvertConfig.bannerAdTimeout;
             req.Proxy = null;//GlobalProxySelection.GetEmptyWebProxy(); // null;
@@ -402,15 +399,13 @@ namespace AdvertModule
                         HttpWebRequest req = (HttpWebRequest)WebRequest.Create(adTodisplay.impressionURL);
 
                         req.UserAgent = "Mozilla Compatible mxit_client";
-                        req.Headers.Add("HTTP_X_DEVICE_USER_AGENT", "Mozilla Compatible mxit_client");
-
 
                         Random random = new Random(DateTime.Now.Second);
                         int randomUpTo254 = random.Next(1, 254);
                         String tempIP = "196.11.239." + randomUpTo254;
-                        req.Headers.Add("HTTP_X_FORWARDED_FOR", tempIP);
+                        req.Headers.Add("X-Forwarded-For", tempIP);
 
-                        req.Headers.Add("HTTP_REFERER", AdvertConfig.appID);
+                        req.Referer = AdvertConfig.appID;
 
                         req.Timeout = AdvertConfig.bannerAdTimeout;
                         req.Proxy = null;
