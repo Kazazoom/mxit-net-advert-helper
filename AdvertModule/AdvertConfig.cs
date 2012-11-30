@@ -41,6 +41,7 @@ namespace AdvertModule
         internal static String mobiAppSaveActionURL;
         internal static String mobiAppServiceName;
         internal static String appID;
+        internal static int bannerCacheSize { get; set; }
 
         #endregion Public Properties
 
@@ -207,6 +208,20 @@ namespace AdvertModule
                     appID = "";
                     Console.WriteLine("ERROR: No value given for 'ExternalAppName', needed to identify your app to the Ad Server. Please add this value to your app.config file.");
                 }
+            }
+
+            temp = ConfigurationManager.AppSettings["bannerCacheSize"];
+            if (!string.IsNullOrEmpty(temp))
+            {
+                bannerCacheSize = Int32.Parse(temp);
+                if (bannerCacheSize > 90) {
+                    Console.WriteLine("WARNING: Mxit has a limit of 100 image strips per apps (as per forum reference). Consider using a smaller cache size for banners.");
+                }
+            }
+            else
+            {
+                bannerCacheSize = 0;
+                Console.WriteLine("NOTICE: Defaulting to 0 for cache size (no caching). Please add 'bannerCacheSize' to your app.config file.");
             }
 
         }
