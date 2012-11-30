@@ -24,6 +24,8 @@ namespace AdvertModule
         private CustomThreadPool workerThreadPool;
         private AutoResetEvent resourceLockOut = new AutoResetEvent(true);
 
+        public delegate void httpDelegate(HttpWebRequest req);
+
         private QueueHelper_HTTP()
         {
         }
@@ -42,8 +44,7 @@ namespace AdvertModule
             }
         }
 
-        public void processHTTPWebRequestImmediately(HttpWebRequest req)
-        {
+        public void sendHTTPRequest(HttpWebRequest req) {
             using (HttpWebResponse response = (HttpWebResponse)req.GetResponse())
             {
                 using (Stream responseStream = response.GetResponseStream())
@@ -60,6 +61,12 @@ namespace AdvertModule
             }
         }
 
+        public void processHTTPWebRequestImmediately(HttpWebRequest req)
+        {
+            //add to the thread pool
+            workerThreadPool.AddWorkItem(new httpDelegate(sendHTTPRequest), req);
+        }
+
         private void QueueHandler()
         {
             //this will receive a notification when there is a new HttpRequest in the thread.
@@ -67,7 +74,6 @@ namespace AdvertModule
 
             int minThreads = 1;
             int maxThreads = 20;
-            int processedQueueItemsCount = 0;
 
             workerThreadPool.SetMinMaxThreads(minThreads, maxThreads);
 
@@ -82,6 +88,13 @@ namespace AdvertModule
                     if ((itemList.Count > 100) && (itemList.Count % 1000 == 0))
                     {
                         logger.Error("[" + MethodBase.GetCurrentMethod().Name + "()] - http queue size: " + itemList.Count);
+                        
+                        if (itemList.Count > 5000) { 
+                            //we're in trouble if we get to this point
+                            //better to dump queue and start over?                            
+                            itemList.Clear();
+                            logger.Fatal("[" + MethodBase.GetCurrentMethod().Name + "()] - queue size exceeds max threshold: " + itemList.Count + ", clearing queue!");
+                        }
                     }
 
                     lock (itemList)
@@ -90,11 +103,7 @@ namespace AdvertModule
                         {
                             //Fetch item from front of queue and request a thread from thread pool to process it
                             HttpWebRequest req = itemList.Dequeue();
-
                             processHTTPWebRequestImmediately(req);
-
-                            processedQueueItemsCount++;
-
                         }
                         catch (Exception e)
                         {
