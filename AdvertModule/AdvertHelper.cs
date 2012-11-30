@@ -56,7 +56,17 @@ namespace AdvertModule
             }
         }
 
+        
         private bool getBannerAd(String MxitUserID, MXit.User.GenderType userGenderType, int displayWidth, int displayHeight, int userAge, out BannerAd adDetail)
+        {
+            //Default to no preselected ad unit
+            String preselectedAdUnitID = "";
+
+            return getBannerAd(MxitUserID, userGenderType, displayWidth, displayHeight, userAge, preselectedAdUnitID, out adDetail);
+        }
+
+        //New method overload incase we want to specify the Ad unit.
+        private bool getBannerAd(String MxitUserID, MXit.User.GenderType userGenderType, int displayWidth, int displayHeight, int userAge, String preselectedAdUnitID, out BannerAd adDetail)
         {
             bool success = false;
 
@@ -90,6 +100,13 @@ namespace AdvertModule
             {
                 openXAdUnitToUse = AdvertConfig.OpenX_AdUnitID_120;
                 deviceName = "samsung/sgh";
+            }
+
+            bool isHavePreselectedAdUnitID = (!String.IsNullOrEmpty(preselectedAdUnitID));
+
+            if (isHavePreselectedAdUnitID)
+            {
+                openXAdUnitToUse = preselectedAdUnitID;
             }
 
             string strOpenxUrl = AdvertConfig.OpenX_URL + openXAdUnitToUse;
@@ -458,10 +475,17 @@ namespace AdvertModule
                             IMessageElement inlineImage = MessageBuilder.Elements.CreateInlineImage(adTodisplay.adImage, ImageAlignment.Center, TextFlow.AloneOnLine, imageDisplayWidthPerc);
                             messageToSend.Append(inlineImage);
                         }
-                        }
-
+        }
 
         public bool appendShinkaBannerAd(ref MessageToSend messageToSend, MXit.User.UserInfo userInfo)
+        {
+            //Default to no preselected ad unit id:
+            String preselectedAdUnitID = ""; 
+
+            return appendShinkaBannerAd(ref messageToSend, userInfo, preselectedAdUnitID);
+        }
+
+        public bool appendShinkaBannerAd(ref MessageToSend messageToSend, MXit.User.UserInfo userInfo, String preselectedAdUnitID)
         {   
             bool gotShinkaAd = false;
 
@@ -476,7 +500,7 @@ namespace AdvertModule
                     int userAge = AgeInYears(userInfo.DateOfBirth);
 
                     BannerAd adTodisplay;
-                    gotShinkaAd = AdvertHelper.Instance.getBannerAd(MxitUserID, userGenderType, displayWidth, displayHeight, userAge, out adTodisplay);
+                    gotShinkaAd = AdvertHelper.Instance.getBannerAd(MxitUserID, userGenderType, displayWidth, displayHeight, userAge, preselectedAdUnitID, out adTodisplay);
 
                     if (gotShinkaAd)
                     {
