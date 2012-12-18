@@ -37,8 +37,9 @@
     <Reference Include="MiscUtil">
       <HintPath>..\..\..\SVN\QuizApp\trunc\lib\MiscUtil.dll</HintPath>
     </Reference>
-    <Reference Include="MXitExternalAppSDK">
-      <HintPath>..\..\..\SVN\QuizApp\trunc\lib\MXitExternalAppSDK.dll</HintPath>
+    <Reference Include="MXitExternalAppSDK, Version=1.3.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\MXitExternalAppSDK.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />

@@ -189,6 +189,10 @@ namespace AdvertModule
                                 adDetail.adImageURL = Between(strResponse, "<media>", "</media>", "", 7, "");
                                 success = true;
 
+                                //Temporary fix:
+                                if (openXAdUnitToUse == "321984")
+                                    adDetail.altText = "";
+
                             }
                             else
                             {
@@ -526,6 +530,10 @@ namespace AdvertModule
                             messageToSend.Append("Go to ", CSS.Ins.clr["light"], CSS.Ins.mrk["d"]);
                             String displayText = System.Net.WebUtility.HtmlDecode(adTodisplay.altText);
                             messageToSend.AppendLine(MessageBuilder.Elements.CreateBrowserLink(displayText, adTodisplay.clickURL));
+                            messageToSend.AppendLine();
+                        }
+                        else //Don't display Alt text link:
+                        {
                             messageToSend.AppendLine();
                         }
 
