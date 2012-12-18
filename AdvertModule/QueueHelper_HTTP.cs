@@ -61,7 +61,7 @@ namespace AdvertModule
             }
         }
 
-        public void processHTTPWebRequestImmediately(HttpWebRequest req)
+        public void addHTTPRequestDelegateToThreadPool(HttpWebRequest req)
         {
             //add to the thread pool
             workerThreadPool.AddWorkItem(new httpDelegate(sendHTTPRequest), req);
@@ -103,7 +103,7 @@ namespace AdvertModule
                         {
                             //Fetch item from front of queue and request a thread from thread pool to process it
                             HttpWebRequest req = itemList.Dequeue();
-                            processHTTPWebRequestImmediately(req);
+                            addHTTPRequestDelegateToThreadPool(req);
                         }
                         catch (Exception e)
                         {
