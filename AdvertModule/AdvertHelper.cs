@@ -23,7 +23,8 @@ using MXit.User;
 namespace AdvertModule
 {
     //Stores a list of the required sizes - needs to be smallest first
-    public enum AdvertSize {
+    public enum AdvertSize
+    {
         //target sizes are: 120x20, 168x28, 216x36, 300x50
         small = 120,
         medium = 168,
@@ -32,36 +33,41 @@ namespace AdvertModule
     }
 
     //Stores the Imagestrips in a Dictionary Collection for each size required
-    public class AdvertStripCollection {
-        public AdvertStripCollection() { 
+    public class AdvertStripCollection
+    {
+        public AdvertStripCollection()
+        {
         }
-        
 
-        public AdvertStripCollection(string bannerHash, Bitmap image) { 
+
+        public AdvertStripCollection(string bannerHash, Bitmap image)
+        {
             //Creates the collection, resizing the images as appropriate
             Array values = Enum.GetValues(typeof(AdvertSize));
 
-            foreach( AdvertSize val in values )
+            foreach (AdvertSize val in values)
             {
-               Bitmap newImage = ResizeImage(image,(int)val);
-               IImageStripReference strip = MXitConnectionModule.ConnectionManager.Instance.RegisterImageStrip(
-                                               bannerHash + val.ToString(), newImage, newImage.Width, newImage.Height, 0);               
-               strips.Add(val.ToString(),strip);
+                Bitmap newImage = ResizeImage(image, (int)val);
+                IImageStripReference strip = MXitConnectionModule.ConnectionManager.Instance.RegisterImageStrip(
+                                                bannerHash + val.ToString(), newImage, newImage.Width, newImage.Height, 0);
+                strips.Add(val.ToString(), strip);
             }
         }
 
-        public IImageStripReference GetStrip(string size) {
+        public IImageStripReference GetStrip(string size)
+        {
             if (strips.ContainsKey(size))
             {
                 return strips[size];
             }
-            else {
+            else
+            {
                 return strips[AdvertSize.xlarge.ToString()]; //the default value
             }
         }
 
         private Bitmap ResizeImage(Bitmap banner, int targetWidth)
-        {            
+        {
             try
             {
                 if (banner.Width > targetWidth)
@@ -76,13 +82,14 @@ namespace AdvertModule
                     return banner;
                 }
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 AdvertHelper.logger.Error("Error resizing image", e);
                 return banner;
             }
         }
 
-        public Dictionary<string, IImageStripReference> strips = new Dictionary<string, IImageStripReference>();        
+        public Dictionary<string, IImageStripReference> strips = new Dictionary<string, IImageStripReference>();
     }
 
 
@@ -120,7 +127,17 @@ namespace AdvertModule
             }
         }
 
+
         private bool getBannerAd(String MxitUserID, MXit.User.GenderType userGenderType, int displayWidth, int displayHeight, int userAge, out BannerAd adDetail)
+        {
+            //Default to no preselected ad unit
+            String preselectedAdUnitID = "";
+
+            return getBannerAd(MxitUserID, userGenderType, displayWidth, displayHeight, userAge, preselectedAdUnitID, out adDetail);
+        }
+
+        //New method overload incase we want to specify the Ad unit.
+        private bool getBannerAd(String MxitUserID, MXit.User.GenderType userGenderType, int displayWidth, int displayHeight, int userAge, String preselectedAdUnitID, out BannerAd adDetail)
         {
             bool success = false;
 
@@ -156,6 +173,13 @@ namespace AdvertModule
                 deviceName = "samsung/sgh";
             }
 
+            bool isHavePreselectedAdUnitID = (!String.IsNullOrEmpty(preselectedAdUnitID));
+
+            if (isHavePreselectedAdUnitID)
+            {
+                openXAdUnitToUse = preselectedAdUnitID;
+            }
+
             string strOpenxUrl = AdvertConfig.OpenX_URL + openXAdUnitToUse;
             string strUserDetails = "&" + "c.device=" + deviceName + "&" + "c.age=" + userAge + "&" + "c.gender=" + userGenderType.ToString().ToLower() + "&" + "xid=" + MxitUserID + "&" + "c.country=za";
             string strCompleteUrl = strOpenxUrl + strUserDetails;
@@ -170,7 +194,7 @@ namespace AdvertModule
             String tempIP = "196.25.101." + randomUpTo254;
 
             req.Headers.Add("X-Forwarded-For", tempIP);
-            req.Referer = AdvertConfig.appID;            
+            req.Referer = AdvertConfig.appID;
 
             req.Timeout = AdvertConfig.bannerAdTimeout;
             req.Proxy = null;//GlobalProxySelection.GetEmptyWebProxy(); // null;
@@ -236,6 +260,10 @@ namespace AdvertModule
                                 adDetail.adImageURL = Between(strResponse, "<media>", "</media>", "", 7, "");
                                 success = true;
 
+                                //Temporary fix:
+                                if (openXAdUnitToUse == "321984")
+                                    adDetail.altText = "";
+
                             }
                             else
                             {
@@ -272,7 +300,7 @@ namespace AdvertModule
                     logger.Debug(MethodBase.GetCurrentMethod().Name + " - " + "SHINKA Warning: Empty ad response:" + strResponse + " USING URL: " + strCompleteUrl + " FOR USER: " + MxitUserID);
                     success = false;
                 }
-                
+
 
             }
             catch (Exception ex)
@@ -293,7 +321,7 @@ namespace AdvertModule
                 logger.Debug("[" + MethodBase.GetCurrentMethod().Name + "()] - Starting to read ad bitmap image...");
                 //convert the url into an image and load to the bitmap
                 //success is dtermined by the loading of the image
-                adDetail.adImage = BitmapFromWeb(adDetail.adImageURL, out success); 
+                adDetail.adImage = BitmapFromWeb(adDetail.adImageURL, out success);
                 logger.Debug("[" + MethodBase.GetCurrentMethod().Name + "()] - Finished reading ad bitmap image...");
             }
 
@@ -305,13 +333,14 @@ namespace AdvertModule
 
 
         //Helper function for caching, creates hash from image
-        public string GetImageHash(Bitmap img) {
+        public string GetImageHash(Bitmap img)
+        {
             string hash;
 
             byte[] byteArray = ImageToByte2(img);
 
             MD5 md5 = System.Security.Cryptography.MD5.Create();
-            
+
             byte[] hashBytes = md5.ComputeHash(byteArray);
 
             // step 2, convert byte array to hex string
@@ -367,7 +396,7 @@ namespace AdvertModule
 
                         finalString = result.Substring((startsearchIndex), lengthOfFinalString);
                         //chop the equal sign and t
-                        finalString = finalString.Substring(search.Length+1);
+                        finalString = finalString.Substring(search.Length + 1);
                     }
 
                     else
@@ -464,39 +493,42 @@ namespace AdvertModule
             return new string(array, 0, arrayIndex);
         }
 
-        private string GetUserSize(UserInfo userInfo) { 
+        private string GetUserSize(UserInfo userInfo)
+        {
             int deviceWidth = userInfo.DeviceInfo.DisplayWidth;
             string userSize = AdvertSize.small.ToString();
             Array values = Enum.GetValues(typeof(AdvertSize));
 
             foreach (AdvertSize val in values)
-            {                
+            {
                 if (deviceWidth < (int)val)
                 {
                     return userSize;
                 }
-                else {
+                else
+                {
                     //each iteration will return the previous size
                     userSize = val.ToString();
                 }
             }
 
             //if we reach here, return the last assigned value
-             return userSize;
-        } 
+            return userSize;
+        }
 
-        private void appendBannerImage(ref MessageToSend messageToSend, MXit.User.UserInfo userInfo, BannerAd adTodisplay) {
-                            if ((AdvertConfig.bannerCacheSize > 0) && (messageToSend.ToDevice.HasFeature(DeviceFeatures.Gaming)))
-                            {
-                                //use ImageStrips to allow caching of images on users device
-                                string bannerHash = GetImageHash(adTodisplay.adImage);
-                                int cachePosition;
-                                if (!bannerHashMap.ContainsKey(bannerHash))
-                                {
-                                    cachePosition = lastCachePosition;
+        private void appendBannerImage(ref MessageToSend messageToSend, MXit.User.UserInfo userInfo, BannerAd adTodisplay)
+        {
+            if ((AdvertConfig.bannerCacheSize > 0) && (messageToSend.ToDevice.HasFeature(DeviceFeatures.Gaming)))
+            {
+                //use ImageStrips to allow caching of images on users device
+                string bannerHash = GetImageHash(adTodisplay.adImage);
+                int cachePosition;
+                if (!bannerHashMap.ContainsKey(bannerHash))
+                {
+                    cachePosition = lastCachePosition;
                     //we create a dictionary of ImageStrips with the required sizes
                     AdvertStripCollection bannerStrips = new AdvertStripCollection(bannerHash, adTodisplay.adImage);
-                    
+
                     bannerStripCache[cachePosition] = bannerStrips;
                     //remove any other hashes that are using this position
                     foreach (string key in bannerHashMap.Keys)
@@ -506,52 +538,60 @@ namespace AdvertModule
                         break;
                     }
                     //and assign this position to the hash
-                                    bannerHashMap[bannerHash] = cachePosition;
+                    bannerHashMap[bannerHash] = cachePosition;
 
-                                    //advance the pointer of the last added imagestrip. 
-                                    lastCachePosition++;
-                                    if (lastCachePosition == AdvertConfig.bannerCacheSize)
-                                    {
-                                        lastCachePosition = 0;
-                                    }
-                                }
+                    //advance the pointer of the last added imagestrip. 
+                    lastCachePosition++;
+                    if (lastCachePosition == AdvertConfig.bannerCacheSize)
+                    {
+                        lastCachePosition = 0;
+                    }
+                }
                 else
                 {
-                                    cachePosition = bannerHashMap[bannerHash];
-                                }
+                    cachePosition = bannerHashMap[bannerHash];
+                }
 
-                                string userSize = GetUserSize(userInfo);
-                                //this doesn't allow client-side auto resizing of images, may want to consider server side resizing
-                                ITable boardAd = MessageBuilder.Elements.CreateTable(messageToSend, "ad-" + bannerHash + "-" + userSize, 1, 1);
-                                boardAd.SelectionMode = SelectionRectType.Outline;
-                                boardAd.Style.Align = (AlignmentType)((int)AlignmentType.VerticalCenter + (int)AlignmentType.HorizontalCenter);
-                                boardAd.Mode = TableSendModeType.Update;
-                                //Mxit SDK 1.4.6 shows Frames.Set as obsolete, to be replaced with Frames.Add, but will break compatibility with older SDK's
-                                boardAd[0, 0].Frames.Set(bannerStripCache[cachePosition].GetStrip(userSize), 0);
-                                messageToSend.Append(boardAd);
-                            }
-                            else
-                            {
+                string userSize = GetUserSize(userInfo);
+                //this doesn't allow client-side auto resizing of images, may want to consider server side resizing
+                ITable boardAd = MessageBuilder.Elements.CreateTable(messageToSend, "ad-" + bannerHash + "-" + userSize, 1, 1);
+                boardAd.SelectionMode = SelectionRectType.Outline;
+                boardAd.Style.Align = (AlignmentType)((int)AlignmentType.VerticalCenter + (int)AlignmentType.HorizontalCenter);
+                boardAd.Mode = TableSendModeType.Update;
+                //Mxit SDK 1.4.6 shows Frames.Set as obsolete, to be replaced with Frames.Add, but will break compatibility with older SDK's
+                boardAd[0, 0].Frames.Set(bannerStripCache[cachePosition].GetStrip(userSize), 0);
+                messageToSend.Append(boardAd);
+            }
+            else
+            {
                 int displayWidth = userInfo.DeviceInfo.DisplayWidth;
-                            int imageDisplayWidthPerc;
+                int imageDisplayWidthPerc;
 
-                            if (displayWidth <= 128)
-                            {
-                                imageDisplayWidthPerc = 99;
-                            }
-                            else
-                            {
-                                imageDisplayWidthPerc = 100;
-                            }
+                if (displayWidth <= 128)
+                {
+                    imageDisplayWidthPerc = 99;
+                }
+                else
+                {
+                    imageDisplayWidthPerc = 100;
+                }
 
-                            IMessageElement inlineImage = MessageBuilder.Elements.CreateInlineImage(adTodisplay.adImage, ImageAlignment.Center, TextFlow.AloneOnLine, imageDisplayWidthPerc);
-                            messageToSend.Append(inlineImage);
-                        }
-                        }
+                IMessageElement inlineImage = MessageBuilder.Elements.CreateInlineImage(adTodisplay.adImage, ImageAlignment.Center, TextFlow.AloneOnLine, imageDisplayWidthPerc);
+                messageToSend.Append(inlineImage);
+            }
+        }
 
 
         public bool appendShinkaBannerAd(ref MessageToSend messageToSend, MXit.User.UserInfo userInfo)
-        {   
+        {
+            //Default to no preselected ad unit id:
+            String preselectedAdUnitID = "";
+
+            return appendShinkaBannerAd(ref messageToSend, userInfo, preselectedAdUnitID);
+        }
+
+        public bool appendShinkaBannerAd(ref MessageToSend messageToSend, MXit.User.UserInfo userInfo, String preselectedAdUnitID)
+        {
             bool gotShinkaAd = false;
 
             try
@@ -565,7 +605,7 @@ namespace AdvertModule
                     int userAge = AgeInYears(userInfo.DateOfBirth);
 
                     BannerAd adTodisplay;
-                    gotShinkaAd = AdvertHelper.Instance.getBannerAd(MxitUserID, userGenderType, displayWidth, displayHeight, userAge, out adTodisplay);
+                    gotShinkaAd = AdvertHelper.Instance.getBannerAd(MxitUserID, userGenderType, displayWidth, displayHeight, userAge, preselectedAdUnitID, out adTodisplay);
 
                     if (gotShinkaAd)
                     {
@@ -580,13 +620,21 @@ namespace AdvertModule
                             {
                                 appendBannerImage(ref messageToSend, userInfo, adTodisplay);
                             }
-                            
+
                         }
 
-                        messageToSend.Append("Go to ", CSS.Ins.clr["light"], CSS.Ins.mrk["d"]);
-                        String displayText = System.Net.WebUtility.HtmlDecode(adTodisplay.altText);
-                        messageToSend.AppendLine(MessageBuilder.Elements.CreateBrowserLink(displayText, adTodisplay.clickURL));                        
-                        messageToSend.AppendLine();
+                        //If the Alt text is empty then don't display the link below the image:
+                        if (!String.IsNullOrEmpty(adTodisplay.altText))
+                        {
+                            messageToSend.Append("Go to ", CSS.Ins.clr["light"], CSS.Ins.mrk["d"]);
+                            String displayText = System.Net.WebUtility.HtmlDecode(adTodisplay.altText);
+                            messageToSend.AppendLine(MessageBuilder.Elements.CreateBrowserLink(displayText, adTodisplay.clickURL));
+                            messageToSend.AppendLine();
+                        }
+                        else //Don't display Alt text link:
+                        {
+                            messageToSend.AppendLine();
+                        }
 
                         //register impression for the bannerad display
                         HttpWebRequest req = (HttpWebRequest)WebRequest.Create(adTodisplay.impressionURL);
@@ -620,76 +668,18 @@ namespace AdvertModule
         }
 
         public int AgeInYears(DateTime birthDate)
-        {            
+        {
             DateTime now = DateTime.Today;
             int age = now.Year - birthDate.Year;
             if (birthDate.DayOfYear > now.DayOfYear) //if the user hasn't had their birthday yet, reduce by 1
-            { 
+            {
                 age--;
             }
             return age;
         }
-        
-        /*
-        //Need this so that we can show an intermediate page on a Mobi app until C# apps are allowed to show HTTP links
-        //This will send a request to a HTTP service to save the URL that the user should go to, when he is redirected to the destination Mobi App. 
-        //This will only work if you have redirect permission from your C# App to the required Mobi App. Request this redirect permission from Mxit (Robert)
-        public void createAndQueueRequestToMobiApp(MXit.User.UserInfo userInfo, String adClickURL)
-        {
-            String saveActionAPI_URL = AdvertConfig.mobiAppSaveActionURL;
 
-            String saveActionToMobiAppURL =
-                saveActionAPI_URL +
-                "?mxituserid=" + userInfo.UserId +
-                "&actiontype=" + "1" +
-                "&action=" + adClickURL;
 
-            //register impression for the bannerad display
-            HttpWebRequest req = (HttpWebRequest)WebRequest.Create(saveActionToMobiAppURL);
-            req.Headers.Add("X_MXPASS_MXIT_USERID", userInfo.UserId);
-            req.Headers.Add("X_MXPASS_ACTION", adClickURL);
-            //
-            req.Timeout = AdvertConfig.bannerAdTimeout;
-            req.Proxy = null;
-            req.KeepAlive = false;
-            req.ServicePoint.ConnectionLeaseTimeout = 1000;
-            req.ServicePoint.MaxIdleTime = 1000;
 
-            QueueHelper_HTTP.Instance.QueueItem(req);
-            //QueueHelper_HTTP.Instance.processHTTPWebRequestImmediately(req);
-        }
-        */
-
-        // No longer needed if we can display a HTTP link
-        /*
-        public void handleUserClickedOnAdLink(MessageReceived messageReceived, MXit.User.UserInfo userInfo)
-        {
-            String adClickURL = messageReceived.Body.Split('|')[1];
-
-            createAndQueueRequestToMobiApp(userInfo, adClickURL); 
-
-            //We need to wait a short while before calling the redirect to make sure the Mobi App has saved the URL to redirect to:
-            Thread.Sleep(20);
-
-            MXit.Navigation.RedirectRequest redirectRequest;
-            String messageForMobiApp = ".gotourl|" + adClickURL;
-            //redirectRequest = messageReceived.CreateRedirectRequest(AdvertConfig.mobiAppServiceName, messageForMobiApp);
-            redirectRequest = messageReceived.CreateRedirectRequest(AdvertConfig.mobiAppServiceName);
-
-            //Redirect the users context
-
-            //************* Replace with your own client.RedirectRequest based on where your client object resides: ***************
-            MXitConnectionModule.ConnectionManager.Instance.RedirectRequest(redirectRequest);
-            //****************************
-
-            
-            //String mobiMessageBody = @"::op=cmd|type=platreq|selmsg=Click here to continue|dest=http%3a//www.google.com|id=12345: Back";
-            //RESTMessageToSend rMessageToSend = new RESTMessageToSend(AdvertConfig.mobiAppServiceName, userInfo.UserId, mobiMessageBody);
-            //RESTConnectionHelper.Instance.SendMessage(rMessageToSend);
-             
-        }
-         */
-    
 
     }
 }
