@@ -22,14 +22,78 @@ using MXit.User;
 
 namespace AdvertModule
 {
+    //Stores a list of the required sizes - needs to be smallest first
+    public enum AdvertSize {
+        //target sizes are: 120x20, 168x28, 216x36, 300x50
+        small = 120,
+        medium = 168,
+        large = 216,
+        xlarge = 300,
+    }
+
+    //Stores the Imagestrips in a Dictionary Collection for each size required
+    public class AdvertStripCollection {
+        public AdvertStripCollection() { 
+        }
+        
+
+        public AdvertStripCollection(string bannerHash, Bitmap image) { 
+            //Creates the collection, resizing the images as appropriate
+            Array values = Enum.GetValues(typeof(AdvertSize));
+
+            foreach( AdvertSize val in values )
+            {
+               Bitmap newImage = ResizeImage(image,(int)val);
+               IImageStripReference strip = MXitConnectionModule.ConnectionManager.Instance.RegisterImageStrip(
+                                               bannerHash + val.ToString(), newImage, newImage.Width, newImage.Height, 0);               
+               strips.Add(val.ToString(),strip);
+            }
+        }
+
+        public IImageStripReference GetStrip(string size) {
+            if (strips.ContainsKey(size))
+            {
+                return strips[size];
+            }
+            else {
+                return strips[AdvertSize.xlarge.ToString()]; //the default value
+            }
+        }
+
+        private Bitmap ResizeImage(Bitmap banner, int targetWidth)
+        {            
+            try
+            {
+                if (banner.Width > targetWidth)
+                {
+                    //resize in proportion
+                    int newHeight = (int)Math.Floor(((decimal)targetWidth / banner.Width) * banner.Height);
+                    Bitmap newImage = new Bitmap((Image)banner, targetWidth, newHeight);
+                    return newImage;
+                }
+                else
+                {
+                    return banner;
+                }
+            }
+            catch (Exception e) {
+                AdvertHelper.logger.Error("Error resizing image", e);
+                return banner;
+            }
+        }
+
+        public Dictionary<string, IImageStripReference> strips = new Dictionary<string, IImageStripReference>();        
+    }
+
+
     public class AdvertHelper
     {
         private static volatile AdvertHelper instance;
-        private static IImageStripReference[] bannerStripCache = new IImageStripReference[AdvertConfig.bannerCacheSize];
+        private static AdvertStripCollection[] bannerStripCache = new AdvertStripCollection[AdvertConfig.bannerCacheSize];
         private static Dictionary<string, int> bannerHashMap = new Dictionary<string, int>(); //tracks which banners are stored in which position in the cache array
         private static int lastCachePosition = 0;
 
-        private static readonly ILog logger = LogManager.GetLogger(typeof(AdvertHelper));
+        public static readonly ILog logger = LogManager.GetLogger(typeof(AdvertHelper));
 
         private AdvertHelper()
         {
@@ -422,8 +486,27 @@ namespace AdvertModule
             return new string(array, 0, arrayIndex);
         }
 
-        private void appendBannerImage(ref MessageToSend messageToSend, MXit.User.UserInfo userInfo, BannerAd adTodisplay)
-        {
+        private string GetUserSize(UserInfo userInfo) { 
+            int deviceWidth = userInfo.DeviceInfo.DisplayWidth;
+            string userSize = AdvertSize.small.ToString();
+            Array values = Enum.GetValues(typeof(AdvertSize));
+
+            foreach (AdvertSize val in values)
+            {                
+                if (deviceWidth < (int)val)
+                {
+                    return userSize;
+                }
+                else {
+                    //each iteration will return the previous size
+                    userSize = val.ToString();
+                }
+            }
+
+            //if we reach here, return the last assigned value
+             return userSize;
+        } 
+
             if ((AdvertConfig.bannerCacheSize > 0) && (messageToSend.ToDevice.HasFeature(DeviceFeatures.Gaming)))
             {
                 //use ImageStrips to allow caching of images on users device
@@ -432,8 +515,10 @@ namespace AdvertModule
                 if (!bannerHashMap.ContainsKey(bannerHash))
                 {
                     cachePosition = lastCachePosition;
-                    IImageStripReference bannerImageStrip = MXitConnectionModule.ConnectionManager.Instance.RegisterImageStrip(bannerHash, adTodisplay.adImage, adTodisplay.adImage.Width, adTodisplay.adImage.Height, 0);
-                    bannerStripCache[cachePosition] = bannerImageStrip;
+                    //we create a dictionary of ImageStrips with the required sizes
+                    AdvertStripCollection bannerStrips = new AdvertStripCollection(bannerHash, adTodisplay.adImage);
+                    
+                    bannerStripCache[cachePosition] = bannerStrips;
                     //remove any other hashes that are using this position
                     foreach (string key in bannerHashMap.Keys)
                     {
@@ -456,12 +541,14 @@ namespace AdvertModule
                     cachePosition = bannerHashMap[bannerHash];
                 }
 
+                                string userSize = GetUserSize(userInfo);
                 //this doesn't allow client-side auto resizing of images, may want to consider server side resizing
-                ITable boardAd = MessageBuilder.Elements.CreateTable(messageToSend, "ad-" + bannerHash, 1, 1);
+                                ITable boardAd = MessageBuilder.Elements.CreateTable(messageToSend, "ad-" + bannerHash + "-" + userSize, 1, 1);
                 boardAd.SelectionMode = SelectionRectType.Outline;
                 boardAd.Style.Align = (AlignmentType)((int)AlignmentType.VerticalCenter + (int)AlignmentType.HorizontalCenter);
                 boardAd.Mode = TableSendModeType.Update;
-                boardAd[0, 0].Frames.Set(bannerStripCache[cachePosition], 0);
+                                //Mxit SDK 1.4.6 shows Frames.Set as obsolete, to be replaced with Frames.Add, but will break compatibility with older SDK's
+                                boardAd[0, 0].Frames.Set(bannerStripCache[cachePosition].GetStrip(userSize), 0);
                 messageToSend.Append(boardAd);
             }
             else
@@ -482,6 +569,7 @@ namespace AdvertModule
                 messageToSend.Append(inlineImage);
             }
         }
+
 
         public bool appendShinkaBannerAd(ref MessageToSend messageToSend, MXit.User.UserInfo userInfo)
         {
