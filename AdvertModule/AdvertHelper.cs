@@ -181,17 +181,18 @@ namespace AdvertModule
             }
 
             string strOpenxUrl = AdvertConfig.OpenX_URL + openXAdUnitToUse;
-            string strUserDetails = "&" + "c.device=" + deviceName + "&" + "c.age=" + userAge + "&" + "c.gender=" + userGenderType.ToString().ToLower() + "&" + "xid=" + MxitUserID + "&" + "c.country=za";
+            string strUserDetails = "&" + "c.age=" + userAge + "&" + "c.gender=" + userGenderType.ToString().ToLower() + "&" + "c.device=" + deviceName + "&" + "c.country=ZA" + "&" + "xid=" + MxitUserID;
             string strCompleteUrl = strOpenxUrl + strUserDetails;
 
             //use the complete url on a mobile
             HttpWebRequest req = (HttpWebRequest)WebRequest.Create(strCompleteUrl);
 
-            req.UserAgent = "Mozilla Compatible mxit_client";
+            req.UserAgent = "Mozilla Compatible";
+            req.Referer = AdvertConfig.appID;
 
             Random random = new Random(DateTime.Now.Second);
             int randomUpTo254 = random.Next(1, 254);
-            String tempIP = "196.25.101." + randomUpTo254;
+            String tempIP = "196.25.101." + randomUpTo254; //mtn: 196.11.239.0
 
             req.Headers.Add("X-Forwarded-For", tempIP);
             req.Referer = AdvertConfig.appID;
@@ -639,7 +640,7 @@ namespace AdvertModule
                         //register impression for the bannerad display
                         HttpWebRequest req = (HttpWebRequest)WebRequest.Create(adTodisplay.impressionURL);
 
-                        req.UserAgent = "Mozilla Compatible mxit_client";
+                        req.UserAgent = "Mozilla Compatible";
 
                         Random random = new Random(DateTime.Now.Second);
                         int randomUpTo254 = random.Next(1, 254);

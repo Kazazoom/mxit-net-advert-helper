@@ -60,7 +60,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\SVN\QuizApp\trunc\Solution\MXitConnectionModule\MXitConnectionModule.csproj">
+    <ProjectReference Include="..\..\mxit-net-connection-helper\MXitConnectionModule\MXitConnectionModule.csproj">
       <Project>{2CF2BE6A-2DBB-4F7F-B0C5-0B392AD8510E}</Project>
       <Name>MXitConnectionModule</Name>
     </ProjectReference>
