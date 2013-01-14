@@ -181,17 +181,18 @@ namespace AdvertModule
             }
 
             string strOpenxUrl = AdvertConfig.OpenX_URL + openXAdUnitToUse;
-            string strUserDetails = "&" + "c.device=" + deviceName + "&" + "c.age=" + userAge + "&" + "c.gender=" + userGenderType.ToString().ToLower() + "&" + "xid=" + MxitUserID + "&" + "c.country=za";
+            string strUserDetails = "&" + "c.age=" + userAge + "&" + "c.gender=" + userGenderType.ToString().ToLower() + "&" + "c.device=" + deviceName + "&" + "c.country=ZA" + "&" + "xid=" + MxitUserID;
             string strCompleteUrl = strOpenxUrl + strUserDetails;
 
             //use the complete url on a mobile
             HttpWebRequest req = (HttpWebRequest)WebRequest.Create(strCompleteUrl);
 
-            req.UserAgent = "Mozilla Compatible mxit_client";
+            req.UserAgent = "Mozilla Compatible";
+            req.Referer = AdvertConfig.appID;
 
             Random random = new Random(DateTime.Now.Second);
             int randomUpTo254 = random.Next(1, 254);
-            String tempIP = "196.25.101." + randomUpTo254;
+            String tempIP = "196.11.239." + randomUpTo254; //mtn: 196.11.239.0
 
             req.Headers.Add("X-Forwarded-For", tempIP);
             req.Referer = AdvertConfig.appID;
@@ -316,6 +317,7 @@ namespace AdvertModule
                 GC.Collect();
             }
 
+            
             if ((adDetail.creativeType == "image") && !String.IsNullOrEmpty(adDetail.adImageURL))
             {
                 logger.Debug("[" + MethodBase.GetCurrentMethod().Name + "()] - Starting to read ad bitmap image...");
@@ -562,6 +564,7 @@ namespace AdvertModule
                 boardAd[0, 0].Frames.Set(bannerStripCache[cachePosition].GetStrip(userSize), 0);
                 messageToSend.Append(boardAd);
             }
+             
             else
             {
                 int displayWidth = userInfo.DeviceInfo.DisplayWidth;
@@ -575,9 +578,11 @@ namespace AdvertModule
                 {
                     imageDisplayWidthPerc = 100;
                 }
+             
 
                 IMessageElement inlineImage = MessageBuilder.Elements.CreateInlineImage(adTodisplay.adImage, ImageAlignment.Center, TextFlow.AloneOnLine, imageDisplayWidthPerc);
-                messageToSend.Append(inlineImage);
+                //IMessageElement inlineImage = MessageBuilder.Elements.CreateInlineImage(adTodisplay.adImageURL, ImageAlignment.Center, TextFlow.AloneOnLine);
+                messageToSend.AppendLine(inlineImage);
             }
         }
 
@@ -609,9 +614,10 @@ namespace AdvertModule
 
                     if (gotShinkaAd)
                     {
-                        if (adTodisplay.creativeType == "image")
+                        if (adTodisplay.creativeType == "image" && userInfo.DeviceInfo.DisplayWidth >= 320)
                         {
                             //an extra check to see that the image was retrieved
+                            //Eric changed: if (adTodisplay.adImage == null)
                             if (adTodisplay.adImage == null)
                             {
                                 return false;
@@ -639,7 +645,7 @@ namespace AdvertModule
                         //register impression for the bannerad display
                         HttpWebRequest req = (HttpWebRequest)WebRequest.Create(adTodisplay.impressionURL);
 
-                        req.UserAgent = "Mozilla Compatible mxit_client";
+                        req.UserAgent = "Mozilla Compatible";
 
                         Random random = new Random(DateTime.Now.Second);
                         int randomUpTo254 = random.Next(1, 254);
